@@ -7,6 +7,8 @@
 #define CLK 2
 
 #define AD9850_CLOCK 125000000				 // AD9850 模組 主頻率
+#define MAX_FREQ 62500000
+#define MIN_FREQ 1
 
 #define pulseHigh(pin) {digitalWrite(pin, HIGH); digitalWrite(pin, LOW); }
 
@@ -16,8 +18,8 @@
 U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NO_ACK);	// oled控制
 
 String strfreq,strspeace;
-unsigned long speace,starttime;
-long freq;
+unsigned long starttime;
+unsigned long freq, speace;
 
 
 unsigned long step[] = {1, 10, 100, 1000, 10000 ,100000 ,1000000};
@@ -119,12 +121,20 @@ void sendFrequency(double frequency) {
 ISR(PCINT2_vect) {
 	unsigned char result = r.process();
 
-	if (result == DIR_CW && freq < 62500000) {
-		freq = freq + speace;
-		if (freq > 62500000) freq = 62500000;
+	if (result == DIR_CW && freq < MAX_FREQ) {
+		if ((MAX_FREQ - freq) < speace) {
+			freq = MAX_FREQ;
+		}
+		else {
+			freq += speace;
+		}
 	}
-	else if (result == DIR_CCW && freq > 1) {
-		freq = freq - speace;
-		if (freq < 1) freq = 1;
+	else if (result == DIR_CCW && freq > MIN_FREQ) {
+		if ((freq - MIN_FREQ) < speace) {
+			freq = MIN_FREQ;
+		}
+		else {
+			freq -= speace;
+		}
 	}
 }
